@@ -1,6 +1,9 @@
 from rest_framework import viewsets
+from rest_framework.decorators import action
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from django.shortcuts import get_object_or_404
+from rest_framework.response import Response
+
 from .models import Chat, Message
 from .serializers import ChatSerializer, MessageSerializer
 from .permissions import IsParticipant
@@ -33,6 +36,23 @@ class ChatViewSet(viewsets.ModelViewSet):
             raise ValidationError("Чат уже существует.")
         serializer.save(manager=self.request.user)
 
+    @action(detail=False, methods=['get'])
+    def total_unread_count(self, request):
+        user = request.user
+        if user.profile.role == 'manager':
+            unread_count = Message.objects.filter(
+                chat__manager=user,
+                sender__profile__role='client',
+                is_read=False
+            ).count()
+        else:
+            unread_count = Message.objects.filter(
+                chat__client=user,
+                sender__profile__role='manager',
+                is_read=False
+            ).count()
+        return Response({'unread_count': unread_count})
+
 
 class ChatMessageViewSet(viewsets.ModelViewSet):
     serializer_class = MessageSerializer
@@ -64,5 +84,4 @@ class ChatMessageViewSet(viewsets.ModelViewSet):
         elif user.profile.role == 'client':
             Message.objects.filter(chat=chat, sender=chat.manager,
                                    is_read=False).update(is_read=True)
-
         return response

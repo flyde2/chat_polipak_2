@@ -18,8 +18,6 @@ class ChatViewSetTests(TestCase):
             username='another_client', password='password')
         Profile.objects.create(user=self.another_client, role='client')
 
-
-
     def test_manager_can_create_chat(self):
         self.client.login(username='manager', password='password')
         data = {'client': self.client_user.id}
@@ -48,6 +46,36 @@ class ChatViewSetTests(TestCase):
                          msg="Менеджер должен иметь возможность видеть свои чаты")
         self.assertEqual(len(response.data), 2,
                          msg="Менеджер должен видеть два чата")
+
+    def test_total_unread_count_for_manager(self):
+        chat = Chat.objects.create(manager=self.manager,
+                                   client=self.client_user)
+        Message.objects.create(chat=chat, sender=self.client_user,
+                               text="client msg1", is_read=False)
+        Message.objects.create(chat=chat, sender=self.client_user,
+                               text="client msg2", is_read=False)
+        self.client.login(username='manager', password='password')
+        response = self.client.get('/chats/total_unread_count/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK,
+                         msg="Статус должен быть 200 при обращении к "
+                             "total_unread_count")
+        self.assertEqual(response.data['unread_count'], 2,
+                         msg="Ожидаем 2 непрочитанных сообщения от клиента")
+
+    def test_total_unread_count_for_client(self):
+        chat = Chat.objects.create(manager=self.manager,
+                                   client=self.client_user)
+        Message.objects.create(chat=chat, sender=self.manager,
+                               text="manager msg1", is_read=False)
+        Message.objects.create(chat=chat, sender=self.manager,
+                               text="manager msg2", is_read=False)
+        self.client.login(username='client', password='password')
+        response = self.client.get('/chats/total_unread_count/')
+        self.assertEqual(response.status_code, status.HTTP_200_OK,
+                         msg="Статус должен быть 200 при обращении к "
+                             "total_unread_count")
+        self.assertEqual(response.data['unread_count'], 2,
+                         msg="Ожидаем 2 непрочитанных сообщения от менеджера")
 
 
 class ChatMessageViewSetTests(TestCase):
