@@ -62,6 +62,13 @@ class ChatMessageViewSetTests(TestCase):
         self.chat = Chat.objects.create(manager=self.manager,
                                         client=self.client_user)
 
+    def test_manager_can_send_message_in_their_chat(self):
+        self.client.login(username='manager', password='password')
+        data = {'text': 'Message from manager'}
+        response = self.client.post(f'/chats/{self.chat.id}/messages/', data)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(Message.objects.count(), 1)
+
     def test_client_can_send_message_in_their_chat(self):
         self.client.login(username='client', password='password')
         data = {'text': 'Test message', 'chat': self.chat.id}

@@ -25,6 +25,9 @@ class ChatViewSet(viewsets.ModelViewSet):
         client = serializer.validated_data['client']
         if client.profile.role != 'client':
             raise ValidationError("Указанный пользователь не клиент.")
+        if client == self.request.user:
+            raise ValidationError("Менеджер не может "
+                                  "создать чат с самими собой.")
         if Chat.objects.filter(manager=self.request.user,
                                client=client).exists():
             raise ValidationError("Чат уже существует.")
@@ -35,14 +38,16 @@ class ChatMessageViewSet(viewsets.ModelViewSet):
     serializer_class = MessageSerializer
     permission_classes = [IsAuthenticated, IsParticipant]
 
+    def get_chat(self):
+        chat_id = self.kwargs.get('chat_id')
+        return get_object_or_404(Chat, id=chat_id)
+
     def get_queryset(self):
-        chat_id = self.kwargs['chat_id']
-        chat = get_object_or_404(Chat, id=chat_id)
+        chat = self.get_chat()
         return Message.objects.filter(chat=chat)
 
     def perform_create(self, serializer):
-        chat_id = self.kwargs['chat_id']
-        chat = get_object_or_404(Chat, id=chat_id)
+        chat = self.get_chat()
         user = self.request.user
         if user.profile.role == 'client' and user != chat.client:
             raise PermissionDenied(
@@ -52,9 +57,7 @@ class ChatMessageViewSet(viewsets.ModelViewSet):
     def list(self, request, *args, **kwargs):
         response = super().list(request, *args, **kwargs)
         user = request.user
-        chat_id = self.kwargs['chat_id']
-        chat = get_object_or_404(Chat, id=chat_id)
-
+        chat = self.get_chat()
         if user.profile.role == 'manager':
             Message.objects.filter(chat=chat, sender=chat.client,
                                    is_read=False).update(is_read=True)

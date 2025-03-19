@@ -7,14 +7,19 @@ class Profile(models.Model):
         ('manager', 'Manager'),
         ('client', 'Client'),
     )
-    user = models.OneToOneField(User, on_delete=models.CASCADE, unique=True)
-    role = models.CharField(max_length=10, choices=ROLE_CHOICES)
+    user = models.OneToOneField(User,
+                                on_delete=models.CASCADE,
+                                unique=True)
+    role = models.CharField(max_length=10,
+                            choices=ROLE_CHOICES)
 
 
 class Chat(models.Model):
-    manager = models.ForeignKey(User, on_delete=models.CASCADE,
+    manager = models.ForeignKey(User,
+                                on_delete=models.CASCADE,
                                 related_name='managed_chats')
-    client = models.ForeignKey(User, on_delete=models.CASCADE,
+    client = models.ForeignKey(User,
+                               on_delete=models.CASCADE,
                                related_name='client_chats')
     created_at = models.DateTimeField(auto_now_add=True)
 
@@ -23,9 +28,11 @@ class Chat(models.Model):
 
 
 class Message(models.Model):
-    chat = models.ForeignKey(Chat, on_delete=models.CASCADE,
+    chat = models.ForeignKey(Chat,
+                             on_delete=models.CASCADE,
                              related_name='messages')
-    sender = models.ForeignKey(User, on_delete=models.CASCADE)
+    sender = models.ForeignKey(User,
+                               on_delete=models.CASCADE)
     text = models.TextField()
     timestamp = models.DateTimeField(auto_now_add=True)
     is_read = models.BooleanField(default=False)
