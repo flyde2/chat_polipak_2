@@ -18,6 +18,8 @@ class ChatViewSetTests(TestCase):
             username='another_client', password='password')
         Profile.objects.create(user=self.another_client, role='client')
 
+
+
     def test_manager_can_create_chat(self):
         self.client.login(username='manager', password='password')
         data = {'client': self.client_user.id}
@@ -79,7 +81,8 @@ class ChatMessageViewSetTests(TestCase):
         self.client.login(username='client', password='password')
         message = Message.objects.create(chat=self.chat,
                                          sender=self.client_user,
-                                         text="Непрочитанное сообщение клиента",
+                                         text="Непрочитанное "
+                                              "сообщение клиента",
                                          is_read=False)
 
         self.client.logout()  # Logout client
@@ -104,7 +107,6 @@ class ChatMessageViewSetTests(TestCase):
         self.assertTrue(Message.objects.get(id=message.id).is_read)
 
     def test_messages_marked_as_read_on_list(self):
-        # Create unread messages from both client and manager
         Message.objects.create(chat=self.chat, sender=self.client_user,
                                text="Непрочитанное сообщение клиента 1",
                                is_read=False)
@@ -126,8 +128,6 @@ class ChatMessageViewSetTests(TestCase):
         self.client.logout()
         self.client.login(username='manager', password='password')
         self.client.get(f'/chats/{self.chat.id}/messages/')
-
-        # Check that client's messages are marked as read
         self.assertTrue(all(msg.is_read for msg in
                             Message.objects.filter(chat=self.chat,
                                                    sender=self.client_user)))
