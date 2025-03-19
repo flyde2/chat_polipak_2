@@ -21,13 +21,13 @@ class ChatViewSet(viewsets.ModelViewSet):
 
     def perform_create(self, serializer):
         if self.request.user.profile.role != 'manager':
-            raise PermissionDenied("Only managers can create chats.")
+            raise PermissionDenied("Только менеджеры могут создавать чаты.")
         client = serializer.validated_data['client']
         if client.profile.role != 'client':
-            raise ValidationError("The specified user is not a client.")
+            raise ValidationError("Указанный пользователь не клиент.")
         if Chat.objects.filter(manager=self.request.user,
                                client=client).exists():
-            raise ValidationError("Chat already exists.")
+            raise ValidationError("Чат уже существует.")
         serializer.save(manager=self.request.user)
 
 
@@ -46,7 +46,7 @@ class ChatMessageViewSet(viewsets.ModelViewSet):
         user = self.request.user
         if user.profile.role == 'client' and user != chat.client:
             raise PermissionDenied(
-                "Client can only send messages in their chat.")
+                "Клиент может отправлять только сообщения в своем чате.")
         serializer.save(chat=chat, sender=user)
 
     def list(self, request, *args, **kwargs):
