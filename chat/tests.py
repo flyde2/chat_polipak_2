@@ -58,7 +58,7 @@ class ChatViewSetTests(TestCase):
         response = self.client.get('/chats/total_unread_count/')
         self.assertEqual(response.status_code, status.HTTP_200_OK,
                          msg="Статус должен быть 200 при обращении к "
-                             "total_unread_count")
+                             "+total_unread_count")
         self.assertEqual(response.data['unread_count'], 2,
                          msg="Ожидаем 2 непрочитанных сообщения от клиента")
 
