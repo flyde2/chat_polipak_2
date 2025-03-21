@@ -77,6 +77,56 @@ class ChatViewSetTests(TestCase):
         self.assertEqual(response.data['unread_count'], 2,
                          msg="Ожидаем 2 непрочитанных сообщения от менеджера")
 
+    def test_manager_can_update_chat(self):
+        self.client.login(username='manager', password='password')
+        chat = Chat.objects.create(manager=self.manager,
+                                   client=self.client_user)
+        data = {'client': self.another_client.id}
+        response = self.client.patch(f'/chats/{chat.id}/', data, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK,
+                         msg="Менеджер должен иметь возможность изменять чат")
+
+        chat.refresh_from_db()
+        self.assertEqual(chat.client.id, self.another_client.id,
+                         msg="Клиент чата должен измениться на another_client")
+
+    def test_client_cannot_update_chat(self):
+        self.client.login(username='client', password='password')
+        chat = Chat.objects.create(manager=self.manager,
+                                   client=self.client_user)
+
+        data = {'client': self.another_client.id}
+        response = self.client.patch(f'/chats/{chat.id}/', data, format='json')
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN,
+                         msg="Клиент не должен иметь права изменять чат")
+        chat.refresh_from_db()
+        self.assertNotEqual(chat.client.id, self.another_client.id,
+                            msg="Чат не должен был измениться")
+
+    def test_manager_can_delete_chat(self):
+        self.client.login(username='manager', password='password')
+        chat = Chat.objects.create(manager=self.manager,
+                                   client=self.client_user)
+
+        response = self.client.delete(f'/chats/{chat.id}/')
+        self.assertEqual(response.status_code, status.HTTP_204_NO_CONTENT,
+                         msg="Менеджер должен иметь возможность удалить чат")
+        self.assertFalse(Chat.objects.filter(id=chat.id).exists(),
+                         msg="Чат не должен существовать после удаления")
+
+    def test_client_cannot_delete_chat(self):
+        self.client.login(username='client', password='password')
+        chat = Chat.objects.create(manager=self.manager,
+                                   client=self.client_user)
+
+        response = self.client.delete(f'/chats/{chat.id}/')
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN,
+                         msg="Клиент не должен иметь права удалять чат")
+        self.assertTrue(Chat.objects.filter(id=chat.id).exists(),
+                        msg="Чат по-прежнему должен существовать")
+
 
 class ChatMessageViewSetTests(TestCase):
     def setUp(self):

@@ -6,13 +6,13 @@ from rest_framework.response import Response
 
 from .models import Chat, Message
 from .serializers import ChatSerializer, MessageSerializer
-from .permissions import IsParticipant
+from .permissions import IsParticipant, IsManagerOrReadOnly
 from rest_framework.permissions import IsAuthenticated
 
 
 class ChatViewSet(viewsets.ModelViewSet):
     serializer_class = ChatSerializer
-    permission_classes = [IsAuthenticated]
+    permission_classes = [IsAuthenticated,  IsManagerOrReadOnly]
 
     def get_queryset(self):
         user = self.request.user

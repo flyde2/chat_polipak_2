@@ -11,3 +11,13 @@ class IsParticipant(permissions.BasePermission):
 
     def has_object_permission(self, request, view, obj):
         return request.user in [obj.chat.manager, obj.chat.client]
+
+
+class IsManagerOrReadOnly(permissions.BasePermission):
+    def has_permission(self, request, view):
+        if request.method in permissions.SAFE_METHODS:
+            return True
+        return (
+            request.user.is_authenticated
+            and getattr(request.user.profile, 'role', None) == 'manager'
+        )
